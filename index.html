@@ -981,15 +981,62 @@
     if (!wasOpen) item.classList.add('open');
   }
 
-  /* Form submit */
-  function handleSubmit(e) {
+  /* ─── Brevo (Sendinblue) config ─────────────────────────────────────
+     Replace the two values below with your real credentials:
+     1. BREVO_API_KEY  → Brevo dashboard → SMTP & API → API Keys
+     2. BREVO_LIST_ID  → Brevo dashboard → Contacts → Lists → list numeric ID
+  ──────────────────────────────────────────────────────────────────── */
+  const BREVO_API_KEY = 'YOUR_BREVO_API_KEY';   // ← replace
+  const BREVO_LIST_ID = 0;                       // ← replace with your list ID (number)
+
+  /* Form submit – Brevo Contact API */
+  async function handleSubmit(e) {
     e.preventDefault();
-    const email = e.target.querySelector('input[type="email"]').value;
-    // Replace with your actual form handler (Mailchimp, ConvertKit, etc.)
-    alert('感謝您！電子書下載鏈接已發送至：' + email + '\n\n請檢查您的收件箱（包括垃圾郵件夾）。');
-    e.target.reset();
-    // Redirect to ebook page
-    window.location.href = 'ebook.html';
+    const form   = e.target;
+    const email  = form.querySelector('input[type="email"]').value.trim();
+    const btn    = form.querySelector('button[type="submit"]');
+    const origText = btn.textContent;
+
+    // Loading state
+    btn.disabled    = true;
+    btn.textContent = '處理中…';
+
+    // Clear any previous inline error
+    let errEl = form.querySelector('.brevo-error');
+    if (errEl) errEl.remove();
+
+    try {
+      const res = await fetch('https://api.brevo.com/v3/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': BREVO_API_KEY
+        },
+        body: JSON.stringify({
+          email: email,
+          listIds: [BREVO_LIST_ID],
+          updateEnabled: true
+        })
+      });
+
+      // 201 = created, 204 = already exists (both are success)
+      if (res.ok || res.status === 204) {
+        form.reset();
+        window.location.href = 'ebook.html';
+      } else {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || `HTTP ${res.status}`);
+      }
+    } catch (err) {
+      // Show inline error in Chinese
+      errEl = document.createElement('p');
+      errEl.className = 'brevo-error';
+      errEl.style.cssText = 'color:#c0392b;font-size:.85rem;margin-top:8px;';
+      errEl.textContent = '提交失敗，請稍後再試或聯繫我們。（' + err.message + '）';
+      btn.insertAdjacentElement('afterend', errEl);
+      btn.disabled    = false;
+      btn.textContent = origText;
+    }
   }
 </script>
 </body>
