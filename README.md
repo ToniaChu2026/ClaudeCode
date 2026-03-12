@@ -1,2 +1,2 @@
-# GJC-landingpage
-Gan Jing Campus lead magnet - The 30-Minute Family Screen Reset
+# PyunkangWan
+Pyungkang Wan lead magnet - 扁鵲了願在扁康
